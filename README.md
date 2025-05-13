@@ -65,4 +65,4 @@ python eczane_bot.py
 
 ---
 
-> Built by Rustem Agziamov 🇷🇺 in Türkiye 🇹🇷
+> Built by Rustem Agziamov in Türkiye 🇹🇷

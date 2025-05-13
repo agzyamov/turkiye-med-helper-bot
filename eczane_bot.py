@@ -1,19 +1,42 @@
-import logging
-from aiogram import Bot, Dispatcher, executor, types
-from dotenv import load_dotenv
-import os
+import aiohttp  # добавь к остальным импортам
 
-load_dotenv()
-BOT_TOKEN = os.getenv("BOT_TOKEN")
+@dp.message_handler(commands=['eczaneler'])
+async def send_pharmacies(message: types.Message):
+    await message.answer("🔍 Fetching duty pharmacies in Antalya...")
 
-logging.basicConfig(level=logging.INFO)
+    headers = {
+        "authorization": f"apikey {os.getenv('COLLECT_API_KEY')}"
+    }
 
-bot = Bot(token=BOT_TOKEN)
-dp = Dispatcher(bot)
+    url = "https://api.collectapi.com/health/dutyPharmacy?il=antalya"
 
-@dp.message_handler(commands=['start'])
-async def send_welcome(message: types.Message):
-    await message.reply("👋 Welcome to Türkiye Med Helper Bot!\nUse /eczaneler to find duty pharmacies.")
+    try:
+        async with aiohttp.ClientSession() as session:
+            async with session.get(url, headers=headers) as resp:
+                data = await resp.json()
 
-if __name__ == '__main__':
-    executor.start_polling(dp, skip_updates=True)
+        pharmacies = data.get("result", [])
+        if not pharmacies:
+            await message.answer("⚠️ No pharmacies found.")
+            return
+
+        for pharmacy in pharmacies[:5]:  # показываем максимум 5 аптек
+            name = pharmacy["name"]
+            address = pharmacy["address"]
+            phone = pharmacy["phone"]
+            loc = pharmacy.get("loc")
+
+            text = f"🏥 *{name}*\n📍 {address}\n📞 {phone}"
+            keyboard = types.InlineKeyboardMarkup()
+
+            if phone:
+                keyboard.add(types.InlineKeyboardButton("📞 Call", url=f"tel:{phone}"))
+            if loc:
+                maps_url = f"https://www.google.com/maps/search/?api=1&query={loc}"
+                keyboard.add(types.InlineKeyboardButton("🗺 Open Map", url=maps_url))
+
+            await message.answer(text, reply_markup=keyboard, parse_mode="Markdown")
+
+    except Exception as e:
+        logging.exception("Error fetching pharmacies")
+        await message.answer("❌ Failed to fetch pharmacy data.")
