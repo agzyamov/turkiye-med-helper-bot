@@ -44,16 +44,14 @@ async def send_pharmacies(message: types.Message):
             loc = pharmacy.get("loc")
 
             text = f"🏥 *{name}*\n📍 {address}\n📞 {phone}"
+
             keyboard = types.InlineKeyboardMarkup()
 
-            if phone:
-                keyboard.add(types.InlineKeyboardButton("📞 Call", url=f"tel:{phone}"))
             if loc:
-                maps_url = f"https://www.google.com/maps/search/?api=1&query={loc}"
-                keyboard.add(types.InlineKeyboardButton("🗺 Open Map", url=maps_url))
+            maps_url = f"https://www.google.com/maps/search/?api=1&query={loc}"
+            keyboard.add(types.InlineKeyboardButton("🗺 Open Map", url=maps_url))
 
-            await message.answer(text, reply_markup=keyboard, parse_mode="Markdown")
-
+            await message.answer(text, reply_markup=keyboard if keyboard.inline_keyboard else None, parse_mode="Markdown")
     
     except Exception as e:
         error_message = f"❌ Error: {type(e).__name__} - {e}"
