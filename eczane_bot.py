@@ -61,6 +61,11 @@ async def send_pharmacies(message: types.Message):
         logging.exception("Error fetching pharmacies")
 
 
+# --- /healthcheck ---
+@dp.message_handler(commands=['healthcheck'])
+async def healthcheck(message: types.Message):
+    await message.answer("✅ Bot is up and running!")
+
 # --- Start bot ---
 if __name__ == '__main__':
     executor.start_polling(dp, skip_updates=True)
