@@ -48,8 +48,8 @@ async def send_pharmacies(message: types.Message):
             keyboard = types.InlineKeyboardMarkup()
 
             if loc:
-            maps_url = f"https://www.google.com/maps/search/?api=1&query={loc}"
-            keyboard.add(types.InlineKeyboardButton("🗺 Open Map", url=maps_url))
+                maps_url = f"https://www.google.com/maps/search/?api=1&query={loc}"
+                keyboard.add(types.InlineKeyboardButton("🗺 Open Map", url=maps_url))
 
             await message.answer(text, reply_markup=keyboard if keyboard.inline_keyboard else None, parse_mode="Markdown")
     
