@@ -54,9 +54,12 @@ async def send_pharmacies(message: types.Message):
 
             await message.answer(text, reply_markup=keyboard, parse_mode="Markdown")
 
+    
     except Exception as e:
+        error_message = f"❌ Error: {type(e).__name__} - {e}"
+        await message.answer(error_message)
         logging.exception("Error fetching pharmacies")
-        await message.answer("❌ Failed to fetch pharmacy data.")
+
 
 # --- Start bot ---
 if __name__ == '__main__':
