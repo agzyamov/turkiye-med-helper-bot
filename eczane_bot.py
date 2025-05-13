@@ -1,5 +1,23 @@
-import aiohttp  # добавь к остальным импортам
+import logging
+import os
+import aiohttp
+from aiogram import Bot, Dispatcher, executor, types
+from dotenv import load_dotenv
 
+load_dotenv()
+BOT_TOKEN = os.getenv("BOT_TOKEN")
+
+logging.basicConfig(level=logging.INFO)
+
+bot = Bot(token=BOT_TOKEN)
+dp = Dispatcher(bot)
+
+# --- /start ---
+@dp.message_handler(commands=['start'])
+async def send_welcome(message: types.Message):
+    await message.reply("👋 Welcome to Türkiye Med Helper Bot!\nUse /eczaneler to find duty pharmacies.")
+
+# --- /eczaneler ---
 @dp.message_handler(commands=['eczaneler'])
 async def send_pharmacies(message: types.Message):
     await message.answer("🔍 Fetching duty pharmacies in Antalya...")
@@ -7,7 +25,6 @@ async def send_pharmacies(message: types.Message):
     headers = {
         "authorization": f"apikey {os.getenv('COLLECT_API_KEY')}"
     }
-
     url = "https://api.collectapi.com/health/dutyPharmacy?il=antalya"
 
     try:
@@ -20,7 +37,7 @@ async def send_pharmacies(message: types.Message):
             await message.answer("⚠️ No pharmacies found.")
             return
 
-        for pharmacy in pharmacies[:5]:  # показываем максимум 5 аптек
+        for pharmacy in pharmacies[:5]:
             name = pharmacy["name"]
             address = pharmacy["address"]
             phone = pharmacy["phone"]
@@ -40,3 +57,7 @@ async def send_pharmacies(message: types.Message):
     except Exception as e:
         logging.exception("Error fetching pharmacies")
         await message.answer("❌ Failed to fetch pharmacy data.")
+
+# --- Start bot ---
+if __name__ == '__main__':
+    executor.start_polling(dp, skip_updates=True)
