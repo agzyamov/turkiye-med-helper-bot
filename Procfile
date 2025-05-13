@@ -1,0 +1,1 @@
+worker: python eczane_bot.py
