@@ -37,7 +37,8 @@ async def send_pharmacies(message: types.Message):
             await message.answer("⚠️ No pharmacies found.")
             return
 
-        for pharmacy in pharmacies[:5]:
+        # Limit to 10 pharmacies (increased from 5)
+        for pharmacy in pharmacies[:10]:
             name = pharmacy["name"]
             address = pharmacy["address"]
             phone = pharmacy["phone"]
