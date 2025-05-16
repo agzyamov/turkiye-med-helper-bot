@@ -6,7 +6,7 @@
 
 ## 🚀 Features
 
-- 🔍 `/eczaneler` — Get current duty pharmacies in Antalya (powered by CollectAPI)
+- 🔍 `/eczaneler` — Get current duty pharmacies in any Turkish province (powered by CollectAPI)
 - 💊 `/analog` (coming soon) — Find Turkish equivalents of Russian brand-name medicines
 - 🗣️ Turkish phrase generation (with optional voice playback)
 - 📍 Location-based pharmacy search (future)
