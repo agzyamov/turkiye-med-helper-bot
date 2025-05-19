@@ -1,10 +1,12 @@
 import logging
 import os
 import aiohttp
+import sys
 from aiogram import Bot, Dispatcher, executor, types
 from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters.state import State, StatesGroup
 from aiogram.contrib.middlewares.logging import LoggingMiddleware
+from aiogram.utils.executor import start_webhook
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -106,6 +108,45 @@ async def process_province_selection(callback_query: types.CallbackQuery):
 async def healthcheck(message: types.Message):
     await message.answer("✅ Bot is up and running!")
 
+# --- Webhook settings ---
+WEBHOOK_HOST = os.getenv('RENDER_EXTERNAL_URL')  # Render.com sets this automatically
+WEBHOOK_PATH = f'/webhook/{BOT_TOKEN}'
+WEBHOOK_URL = f'{WEBHOOK_HOST}{WEBHOOK_PATH}'
+
+# Webserver settings
+WEBAPP_HOST = '0.0.0.0'  # Bind to all interfaces
+WEBAPP_PORT = int(os.getenv('PORT', 10000))  # Render sets PORT env variable automatically
+
+async def on_startup(dp):
+    # Setup webhook
+    logging.info(f"Setting webhook to {WEBHOOK_URL}")
+    await bot.set_webhook(WEBHOOK_URL)
+
+async def on_shutdown(dp):
+    # Remove webhook on shutdown
+    logging.info("Shutting down webhook connection")
+    await bot.delete_webhook()
+    
+    # Close DB connections, etc.
+    await dp.storage.close()
+    await dp.storage.wait_closed()
+
 # --- Start bot ---
 if __name__ == '__main__':
-    executor.start_polling(dp, skip_updates=True)
+    # Check if we're running on Render
+    if os.getenv('RENDER', ''):
+        # Start in webhook mode (for production)
+        logging.info("Starting bot in webhook mode")
+        start_webhook(
+            dispatcher=dp,
+            webhook_path=WEBHOOK_PATH,
+            on_startup=on_startup,
+            on_shutdown=on_shutdown,
+            skip_updates=True,
+            host=WEBAPP_HOST,
+            port=WEBAPP_PORT,
+        )
+    else:
+        # Use polling for local development
+        logging.info("Starting bot in polling mode (development)")
+        executor.start_polling(dp, skip_updates=True)

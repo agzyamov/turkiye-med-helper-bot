@@ -10,7 +10,6 @@
 - 💊 `/analog` (coming soon) — Find Turkish equivalents of Russian brand-name medicines
 - 🗣️ Turkish phrase generation (with optional voice playback)
 - 📍 Location-based pharmacy search (future)
-- 🛎 Notifications by district (Boosty-only feature)
 - 📈 Usage statistics tracking
 
 ---
@@ -52,13 +51,28 @@ Donations help keep the project running and available for more users.
 ## 🛠 Setup (dev)
 
 1. Clone the repository  
-2. Copy `.env.example` → `.env` and fill in your keys  
+2. Copy `example.env` → `.env` and fill in your keys  
 3. Install dependencies  
 ```bash
 pip install -r requirements.txt
 ```
 
-4. Run the bot  
+4. Run the bot (development mode)
+```bash
+python eczane_bot.py
+```
+
+## 🌐 Deployment
+
+This bot supports two running modes:
+
+- **Development Mode**: Uses polling (default when running locally)
+- **Production Mode**: Uses webhooks (optimized for Render's free tier)
+
+For deploying to Render.com:
+1. See [render-deploy.md](./render-deploy.md) for detailed instructions
+2. Set required environment variables in Render dashboard
+3. Bot will automatically use webhook mode on Render  
 ```bash
 python eczane_bot.py
 ```

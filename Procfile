@@ -1,1 +1,1 @@
-worker: python eczane_bot.py
+web: python eczane_bot.py
