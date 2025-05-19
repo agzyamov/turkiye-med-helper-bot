@@ -12,7 +12,10 @@ from dotenv import load_dotenv
 load_dotenv()
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
 
 # List of major provinces in Turkey (Turkish names, lowercase for API)
 PROVINCES = [
@@ -29,6 +32,7 @@ dp.middleware.setup(LoggingMiddleware())
 # --- /start ---
 @dp.message_handler(commands=['start'])
 async def send_welcome(message: types.Message):
+    logging.info(f"Received /start command from user {message.from_user.id}")
     await message.reply("👋 Welcome to Türkiye Med Helper Bot!\nUse /eczaneler to find duty pharmacies in any province.")
 
 # --- /eczaneler ---
@@ -37,6 +41,7 @@ async def choose_province(message: types.Message):
     """
     Show province selection keyboard
     """
+    logging.info(f"Received /eczaneler command from user {message.from_user.id}")
     keyboard = types.InlineKeyboardMarkup(row_width=3)
     
     # Create buttons for each province
@@ -56,6 +61,7 @@ async def choose_province(message: types.Message):
 # Province selection callback handler
 @dp.callback_query_handler(lambda c: c.data.startswith('province:'))
 async def process_province_selection(callback_query: types.CallbackQuery):
+    logging.info(f"Received province selection callback from user {callback_query.from_user.id}, data: {callback_query.data}")
     # Get the selected province from the callback data
     selected_province = callback_query.data.split(':')[1]
     
@@ -106,6 +112,7 @@ async def process_province_selection(callback_query: types.CallbackQuery):
 # --- /healthcheck ---
 @dp.message_handler(commands=['healthcheck'])
 async def healthcheck(message: types.Message):
+    logging.info(f"Received /healthcheck command from user {message.from_user.id}")
     await message.answer("✅ Bot is up and running!")
 
 # --- Webhook settings ---
@@ -120,7 +127,17 @@ WEBAPP_PORT = int(os.getenv('PORT', 10000))  # Render sets PORT env variable aut
 async def on_startup(dp):
     # Setup webhook
     logging.info(f"Setting webhook to {WEBHOOK_URL}")
-    await bot.set_webhook(WEBHOOK_URL)
+    try:
+        await bot.delete_webhook()
+        await bot.set_webhook(WEBHOOK_URL)
+        logging.info("Webhook setup successful")
+        
+        # Get and log webhook info for debugging
+        webhook_info = await bot.get_webhook_info()
+        logging.info(f"Webhook info: URL={webhook_info.url}, has custom certificate={webhook_info.has_custom_certificate}, "
+                    f"pending update count={webhook_info.pending_update_count}")
+    except Exception as e:
+        logging.error(f"Failed to set webhook: {e}")
 
 async def on_shutdown(dp):
     # Remove webhook on shutdown
@@ -137,15 +154,30 @@ if __name__ == '__main__':
     if os.getenv('RENDER', ''):
         # Start in webhook mode (for production)
         logging.info("Starting bot in webhook mode")
-        start_webhook(
-            dispatcher=dp,
-            webhook_path=WEBHOOK_PATH,
-            on_startup=on_startup,
-            on_shutdown=on_shutdown,
-            skip_updates=True,
-            host=WEBAPP_HOST,
-            port=WEBAPP_PORT,
-        )
+        logging.info(f"WEBHOOK_HOST: {WEBHOOK_HOST}")
+        logging.info(f"WEBHOOK_PATH: {WEBHOOK_PATH}")
+        logging.info(f"WEBHOOK_URL: {WEBHOOK_URL}")
+        logging.info(f"WEBAPP_HOST: {WEBAPP_HOST}")
+        logging.info(f"WEBAPP_PORT: {WEBAPP_PORT}")
+        
+        if not WEBHOOK_HOST:
+            logging.error("RENDER_EXTERNAL_URL environment variable is not set! Setting fallback URL.")
+            WEBHOOK_HOST = "https://your-app-name.onrender.com"
+            WEBHOOK_URL = f"{WEBHOOK_HOST}{WEBHOOK_PATH}"
+            
+        try:
+            start_webhook(
+                dispatcher=dp,
+                webhook_path=WEBHOOK_PATH,
+                on_startup=on_startup,
+                on_shutdown=on_shutdown,
+                skip_updates=True,
+                host=WEBAPP_HOST,
+                port=WEBAPP_PORT,
+            )
+        except Exception as e:
+            logging.critical(f"Failed to start webhook: {e}")
+            sys.exit(1)
     else:
         # Use polling for local development
         logging.info("Starting bot in polling mode (development)")
